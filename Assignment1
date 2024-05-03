@@ -1,0 +1,120 @@
+#Packages
+install.packages("lubridate")
+install.packages("ggcorrplot")
+install.packages("zoo")
+install.packages("dplyr") 
+library(zoo)
+library(dplyr)
+library(lubridate)
+library(ggcorrplot)
+#Organize Data
+Data <- read.table('DataAssign1.txt', header = TRUE, sep = ",")
+
+head(Data)
+
+#Q1 
+
+#Linear Interpolation
+#Creates unquie X values for each Row through combinding Date/Time
+DT <- as.POSIXct(paste(Data$Date, Data$Time), format="%d/%m/%Y %H:%M:%S", tz="GMT")
+
+#unsure how to actually replace NA values
+
+which(is.na(Data))
+Data <- Data %>% mutate(Global_active_power = na.approx(Global_active_power))
+Data <- Data %>% mutate(Global_reactive_power = na.approx(Global_reactive_power))
+Data <- Data %>% mutate(Voltage = na.approx(Voltage))
+Data <- Data %>% mutate(Global_intensity = na.approx(Global_intensity))
+Data <- Data %>% mutate(Sub_metering_1 = na.approx(Sub_metering_1))
+Data <- Data %>% mutate(Sub_metering_2 = na.approx(Sub_metering_2))
+Data <- Data %>% mutate(Sub_metering_3 = na.approx(Sub_metering_3))
+
+which(is.na(Data))
+#Data Point Anomalies
+#Global_active_power
+GAPMean <- mean(Data$Global_active_power,na.rm = TRUE)
+GAPSD<- sd(Data$Global_active_power,na.rm = TRUE)
+GAPz <- ((Data$Global_active_power - GAPMean) / GAPSD)
+#Calcuates percentage of values are more than 3 standard deviations away
+GAPPointAnomaliesCount <- sum(table(which(abs(GAPz)>3)))
+#Total Rows without NA values
+GAPPointAnomaliesCountPercentage <- GAPPointAnomaliesCount/nrow(na.omit(Data))*100
+
+#Global_reactive_power
+GRPMean <- mean(Data$Global_reactive_power,na.rm = TRUE)
+GRPSD<- sd(Data$Global_reactive_power,na.rm = TRUE)
+GRPz <- ((Data$Global_reactive_power - GRPMean) / GRPSD)
+#Calcuates percentage of values are more than 3 standard deviations away
+GRPPointAnomaliesCount <- sum(table(which(abs(GRPz)>3)))
+#Total Rows without NA values
+GRPPointAnomaliesCountPercentage <- GRPPointAnomaliesCount/nrow(na.omit(Data))*100
+
+#Voltage
+VoltMean <- mean(Data$Voltage,na.rm = TRUE)
+VoltSD<- sd(Data$Voltage,na.rm = TRUE)
+Voltz <- ((Data$Voltage - VoltMean) / VoltSD)
+#Calcuates percentage of values are more than 3 standard deviations away
+VoltPointAnomaliesCount <- sum(table(which(abs(Voltz)>3)))
+#Total Rows without NA values
+VoltPointAnomaliesCountPercentage <- VoltPointAnomaliesCount/nrow(na.omit(Data))*100
+
+#Global_intensity
+GIMean <- mean(Data$Global_intensity,na.rm = TRUE)
+GISD<- sd(Data$Global_intensity,na.rm = TRUE)
+GIz <- ((Data$Global_intensity - GIMean) / GISD)
+#Calcuates percentage of values are more than 3 standard deviations away
+GIPointAnomaliesCount <- sum(table(which(abs(GIz)>3)))
+#Total Rows without NA values
+GIPointAnomaliesCountPercentage <- GIPointAnomaliesCount/nrow(na.omit(Data))*100
+
+
+#Sub_metering_1
+SM1Mean <- mean(Data$Sub_metering_1,na.rm = TRUE)
+SM1SD<- sd(Data$Sub_metering_1,na.rm = TRUE)
+SM1z <- ((Data$Sub_metering_1 - SM1Mean) / SM1SD)
+#Calcuates percentage of values are more than 3 standard deviations away
+SM1PointAnomaliesCount <- sum(table(which(abs(SM1z)>3)))
+#Total Rows without NA values
+SM1PointAnomaliesCountPercentage <- SM1PointAnomaliesCount/nrow(na.omit(Data))*100
+
+#Sub_metering_2
+SM2Mean <- mean(Data$Sub_metering_2,na.rm = TRUE)
+SM2SD<- sd(Data$Sub_metering_2,na.rm = TRUE)
+SM2z <- ((Data$Sub_metering_2 - SM2Mean) / SM2SD)
+#Calcuates percentage of values are more than 3 standard deviations away
+SM2PointAnomaliesCount <- sum(table(which(abs(SM2z)>3)))
+#Total Rows without NA values
+SM2PointAnomaliesCountPercentage <- SM2PointAnomaliesCount/nrow(na.omit(Data))*100
+
+#Sub_metering_3
+SM3Mean <- mean(Data$Sub_metering_3,na.rm = TRUE)
+SM3SD<- sd(Data$Sub_metering_3,na.rm = TRUE)
+SM3z <- ((Data$Sub_metering_3 - SM3Mean) / SM3SD)
+#Calcuates percentage of values are more than 3 standard deviations away
+SM3PointAnomaliesCount <- sum(table(which(abs(SM3z)>3)))
+#Total Rows without NA values
+SM3PointAnomaliesCountPercentage <- SM3PointAnomaliesCount/nrow(na.omit(Data))*100
+#SM percentages to Text
+cat(sprintf("Global Active Power: %f\nGlobal Reactive Power: %f\nVoltage: %f\nGlobal Intensity: %f\nSub_Metering 1: %f\nSub_Metering 2:  %f\nSub_Metering 3:  %f",
+            GAPPointAnomaliesCountPercentage,
+            GRPPointAnomaliesCountPercentage,
+            VoltPointAnomaliesCountPercentage, 
+            GIPointAnomaliesCountPercentage,
+            SM1PointAnomaliesCountPercentage,SM2PointAnomaliesCountPercentage,SM3PointAnomaliesCountPercentage))
+#Extract Our Working Dataset
+Data$Date <- as.POSIXlt(Data$Date, format = "%d/%m/%Y")
+Data$Time <- as.POSIXlt(Data$Time, format = "%H:%M:%S")
+
+#our Week 15 Dataset
+sub <- subset(Data, Data$Date >= as.POSIXlt("9/4/2007", format = "%d/%m/%Y") & Data$Date <= as.POSIXlt("15/4/2007", format = "%d/%m/%Y")) #week 15 Data
+#Our week has no NA values within it
+which(is.na(ourData))
+
+#Q2
+#Create a copy of sub without the Date and Time columns so that cor() can be used
+minisub <- data.frame(sub$Global_active_power, sub$Global_reactive_power, sub$Voltage, sub$Global_intensity, sub$Sub_metering_1, sub$Sub_metering_2, sub$Sub_metering_3)
+
+#Create a correlation matrix #use="complete.obs" discards rows with NA values
+mat <- cor(minisub, use = "complete.obs", method = "pearson")
+
+ggcorrplot(mat)
